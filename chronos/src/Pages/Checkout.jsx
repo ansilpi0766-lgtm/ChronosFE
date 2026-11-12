@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import CheckoutStep from "../Components/Components/CheckoutStep";
 import ShippingForm from "../Components/Components/ShippingForm";
@@ -9,6 +10,8 @@ import { useCart } from "../Context/CartContext";
 import useCreateOrder from "../Hooks/useCreateOrder";
 
 const Checkout = () => {
+  const navigate = useNavigate();
+
   const [step, setStep] = useState(1);
   const [shipping, setShipping] = useState(null);
 
@@ -18,6 +21,17 @@ const Checkout = () => {
   const handlePlaceOrder = async () => {
     if (!shipping || cart.length === 0) return;
 
+    // Check customer login
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login", {
+        state: { from: "/checkout" },
+      });
+      return;
+    }
+
+    // Customer is logged in, create order
     const order = await createOrder(cart, shipping);
 
     if (order) {
@@ -30,22 +44,17 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-white px-6 py-12">
       <div className="mx-auto w-full max-w-4xl">
-        {/* Breadcrumb */}
         <p className="mb-8 text-sm text-gray-400">
           Home &gt; <span className="text-gray-600">Checkout</span>
         </p>
 
-        {/* Heading */}
         <h1 className="mb-6 text-3xl font-medium">Secure Checkout</h1>
 
-        {/* Steps */}
         <div className="mb-12">
           <CheckoutStep step={step} />
         </div>
 
-        {/* Checkout Layout */}
         <div className="flex items-start justify-between gap-12">
-          {/* Left Section */}
           <div className="w-full max-w-[360px]">
             {step === 1 && (
               <ShippingForm
@@ -99,7 +108,6 @@ const Checkout = () => {
             )}
           </div>
 
-          {/* Right Section - Order Summary */}
           <div className="w-full max-w-[350px] shrink-0">
             <OrderSummery />
           </div>

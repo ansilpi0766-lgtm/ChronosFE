@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 
 const CollectionFilters = () => {
+  const [activeCategory, setActiveCategory] = useState("All Collections");
+
   const categories = [
     "All Collections",
     "Timepieces",
@@ -9,17 +11,29 @@ const CollectionFilters = () => {
   ];
 
   return (
-    <div className="flex items-center border-b px-6 md:px-10 py-4">
-      <p className="text-xs font-medium ">FILTERS</p>
+    <div className="grid grid-cols-[220px_minmax(0,1fr)] border-b border-gray-100">
+      {/* Left Filter Heading */}
+      <div className="flex items-center justify-between px-12 py-3 border-r border-gray-100">
+        <p className="text-[10px] font-medium">FILTERS</p>
 
-      <div className="flex items-center gap-6 ml-78">
-        {categories.map((category, index) => (
+        <button
+          onClick={() => setActiveCategory("All Collections")}
+          className="text-[9px] text-gray-400 hover:text-black"
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* Category Navigation */}
+      <div className="flex items-center gap-2 px-5 py-3 overflow-x-auto">
+        {categories.map((category) => (
           <button
             key={category}
-            className={`px-4 py-2 text-[10px] border whitespace-nowrap ${
-              index === 0
-                ? "bg-[#f2c035] border-[#f2c035]"
-                : "bg-white border-gray-200"
+            onClick={() => setActiveCategory(category)}
+            className={`px-3 py-1 text-[9px] border whitespace-nowrap transition ${
+              activeCategory === category
+                ? "bg-[#f2c035] border-[#f2c035] text-black"
+                : "bg-white border-gray-200 text-gray-500 hover:border-black"
             }`}
           >
             {category}

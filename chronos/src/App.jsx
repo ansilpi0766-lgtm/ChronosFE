@@ -1,20 +1,40 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
 import HomePage from "./Pages/HomePage";
 import Cart from "./Pages/Cart";
 import Checkout from "./Pages/Checkout";
 import Collection from "./Pages/Collection";
+import ProductDetails from "./Pages/ProductDetails/ProductDetails";
+import Login from "./Pages/Login";
+import Register from "./Pages/Register";
 
 // Layout
 const Layout = () => {
   return (
     <>
       <Navbar />
+
       <Outlet />
+
       <Footer />
+
+      {/* Toast Notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="dark"
+      />
     </>
   );
 };
@@ -38,8 +58,20 @@ const router = createBrowserRouter([
         element: <Checkout />,
       },
       {
-        path: "/Collection",
+        path: "Collection",
         element: <Collection />,
+      },
+      {
+        path: "product/:id",
+        element: <ProductDetails />,
+      },
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "register",
+        element: <Register />,
       },
     ],
   },

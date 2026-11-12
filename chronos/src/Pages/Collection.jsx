@@ -1,9 +1,9 @@
 import React from "react";
+
 import CollectionHeader from "../Components/OurCollections/CollectionHeader";
 import CollectionFilters from "../Components/OurCollections/CollectionFilters";
 import CollectionSidebar from "../Components/OurCollections/CollectionSidebar";
 import ProductGrid from "../Components/OurCollections/ProductGrid";
-import ProductCard from "../Components/OurCollections/ProductCard";
 
 const Collection = () => {
   return (
@@ -15,14 +15,12 @@ const Collection = () => {
       <CollectionFilters />
 
       {/* Main Content */}
-      <div className="flex px-6 md:px-10 lg:px-16 py-8 gap-8">
+      <div className="grid grid-cols-[220px_minmax(0,1fr)]">
         {/* Sidebar */}
         <CollectionSidebar />
 
         {/* Products */}
         <ProductGrid />
-
-        <ProductCard />
       </div>
     </div>
   );
