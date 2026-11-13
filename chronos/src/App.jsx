@@ -14,17 +14,18 @@ import ProductDetails from "./Pages/ProductDetails/ProductDetails";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 
+import Timepieces from "./Pages/Timepieces";
+import Accessories from "./Pages/Accessories";
+import FineArt from "./Pages/FineArt";
+
 // Layout
 const Layout = () => {
   return (
     <>
       <Navbar />
-
       <Outlet />
-
       <Footer />
 
-      {/* Toast Notifications */}
       <ToastContainer
         position="top-right"
         autoClose={2000}
@@ -60,6 +61,18 @@ const router = createBrowserRouter([
       {
         path: "Collection",
         element: <Collection />,
+      },
+      {
+        path: "timepieces",
+        element: <Timepieces />,
+      },
+      {
+        path: "accessories",
+        element: <Accessories />,
+      },
+      {
+        path: "fine-art",
+        element: <FineArt />,
       },
       {
         path: "product/:id",

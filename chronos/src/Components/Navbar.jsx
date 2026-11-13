@@ -1,14 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Globe, Search, ShoppingCart, User, X } from "lucide-react";
 
 import CartDrawer from "./CartDrawer";
 import { useCart } from "../Context/CartContext";
+import { api } from "../Services/api";
 
 const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const { cart } = useCart();
 
@@ -16,6 +21,57 @@ const Navbar = () => {
     (total, item) => total + (item.quantity || 1),
     0,
   );
+
+  // Fetch products when search is opened
+  useEffect(() => {
+    if (!searchOpen) return;
+
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await api.get("/products");
+
+        // Supports common API response formats
+        const data = response.data;
+
+        const productList = Array.isArray(data)
+          ? data
+          : Array.isArray(data.products)
+            ? data.products
+            : Array.isArray(data.data)
+              ? data.data
+              : Array.isArray(data.data?.products)
+                ? data.data.products
+                : [];
+
+        setProducts(productList);
+      } catch (err) {
+        console.error("Product search error:", err);
+        setError("Unable to load products. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [searchOpen]);
+
+  // Filter products based on search text
+  const filteredProducts = useMemo(() => {
+    const search = searchText.trim().toLowerCase();
+
+    if (!search) return [];
+
+    return products.filter((product) => {
+      return (
+        product.name?.toLowerCase().includes(search) ||
+        product.brand?.toLowerCase().includes(search) ||
+        product.category?.toLowerCase().includes(search)
+      );
+    });
+  }, [products, searchText]);
 
   return (
     <>
@@ -51,9 +107,12 @@ const Navbar = () => {
             <p className="text-sm">English</p>
           </div>
 
-          {/* Search */}
+          {/* Search Button */}
           <button
-            onClick={() => setSearchOpen(!searchOpen)}
+            onClick={() => {
+              setSearchOpen(!searchOpen);
+              setSearchText("");
+            }}
             className="cursor-pointer"
           >
             {searchOpen ? <X size={18} /> : <Search size={18} />}
@@ -81,18 +140,71 @@ const Navbar = () => {
 
         {/* Search Box */}
         {searchOpen && (
-          <div className="absolute right-8 top-20 w-80 rounded-lg border border-[#FFEDD0] bg-black/90 p-4">
+          <div className="absolute right-8 top-20 w-80 rounded-lg border border-[#FFEDD0]/30 bg-black/95 p-4 shadow-xl">
             <input
               type="text"
               placeholder="Search products..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
+              autoFocus
               className="w-full border-b border-[#FFEDD0] bg-transparent px-2 py-3 text-white outline-none placeholder:text-white/60"
             />
 
-            <p className="mt-3 text-sm text-[#FFEDD0]">
-              Searching for: {searchText}
-            </p>
+            <div className="mt-3 max-h-80 overflow-y-auto">
+              {!searchText.trim() && (
+                <p className="text-sm text-white/60">
+                  Search by product name, brand or category.
+                </p>
+              )}
+
+              {loading && (
+                <p className="py-3 text-sm text-white/70">
+                  Loading products...
+                </p>
+              )}
+
+              {error && <p className="py-3 text-sm text-red-400">{error}</p>}
+
+              {!loading &&
+                !error &&
+                searchText.trim() &&
+                filteredProducts.length === 0 && (
+                  <p className="py-3 text-sm text-white/70">
+                    No products found.
+                  </p>
+                )}
+
+              {!loading &&
+                filteredProducts.map((product) => (
+                  <Link
+                    key={product._id || product.id}
+                    to={`/product/${product._id || product.id}`}
+                    onClick={() => {
+                      setSearchOpen(false);
+                      setSearchText("");
+                    }}
+                    className="flex items-center gap-3 border-b border-white/10 p-3 transition hover:bg-white/10"
+                  >
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="h-14 w-14 rounded object-cover"
+                    />
+
+                    <div>
+                      <p className="text-sm text-[#FFEDD0]">{product.name}</p>
+
+                      <p className="mt-1 text-xs text-white/60">
+                        {product.brand}
+                      </p>
+
+                      <p className="mt-1 text-sm text-[#FFC400]">
+                        ₹{product.price}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+            </div>
           </div>
         )}
       </nav>
