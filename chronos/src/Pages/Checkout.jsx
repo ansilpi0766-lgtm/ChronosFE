@@ -12,8 +12,18 @@ import useCreateOrder from "../Hooks/useCreateOrder";
 const Checkout = () => {
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
-  const [shipping, setShipping] = useState(null);
+  // Restore checkout details after login redirect
+  const [step, setStep] = useState(() => {
+    return Number(sessionStorage.getItem("checkoutStep")) || 1;
+  });
+
+  const [shipping, setShipping] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("checkoutShipping")) || null;
+    } catch {
+      return null;
+    }
+  });
 
   const { cart, clearCart } = useCart();
   const { createOrder, isLoading } = useCreateOrder();
@@ -21,23 +31,31 @@ const Checkout = () => {
   const handlePlaceOrder = async () => {
     if (!shipping || cart.length === 0) return;
 
-    // Check customer login
     const token = localStorage.getItem("token");
 
+    // Save checkout details before redirecting to login
     if (!token) {
+      sessionStorage.setItem("checkoutShipping", JSON.stringify(shipping));
+      sessionStorage.setItem("checkoutStep", "3");
+
       navigate("/login", {
         state: { from: "/checkout" },
       });
+
       return;
     }
 
-    // Customer is logged in, create order
+    // Create order after login
     const order = await createOrder(cart, shipping);
 
     if (order) {
       clearCart();
+
       setStep(1);
       setShipping(null);
+
+      sessionStorage.removeItem("checkoutShipping");
+      sessionStorage.removeItem("checkoutStep");
     }
   };
 

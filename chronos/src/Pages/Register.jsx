@@ -1,10 +1,14 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { api } from "../Services/api";
 import { toast } from "react-toastify";
 
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Return to checkout if registration started during checkout
+  const redirectTo = location.state?.from || "/";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -44,7 +48,7 @@ const Register = () => {
 
       toast.success("Registration successful!");
 
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.message || "Registration failed");
     } finally {
@@ -122,6 +126,7 @@ const Register = () => {
           Already have an account?{" "}
           <Link
             to="/login"
+            state={{ from: redirectTo }}
             className="text-[#421713] font-semibold hover:underline"
           >
             Login

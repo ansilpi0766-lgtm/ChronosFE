@@ -13,6 +13,7 @@ import Collection from "./Pages/Collection";
 import ProductDetails from "./Pages/ProductDetails/ProductDetails";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
+import Profile from "./Pages/Profile";
 
 import Timepieces from "./Pages/Timepieces";
 import Accessories from "./Pages/Accessories";
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: "profile",
+        element: <Profile />,
       },
       {
         path: "cart",

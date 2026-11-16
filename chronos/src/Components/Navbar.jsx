@@ -17,6 +17,9 @@ const Navbar = () => {
 
   const { cart } = useCart();
 
+  // Check customer login status
+  const isLoggedIn = Boolean(localStorage.getItem("token"));
+
   const cartCount = cart.reduce(
     (total, item) => total + (item.quantity || 1),
     0,
@@ -133,7 +136,7 @@ const Navbar = () => {
           </button>
 
           {/* User */}
-          <Link to="/login">
+          <Link to={isLoggedIn ? "/profile" : "/login"}>
             <User size={18} />
           </Link>
         </div>

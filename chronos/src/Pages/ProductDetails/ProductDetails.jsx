@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useCart } from "../../Context/CartContext";
 
 import {
   Heart,
@@ -13,31 +14,126 @@ import {
   Minus,
   Plus,
   ArrowRight,
+  Check,
 } from "lucide-react";
 
 const API_URL = "https://chronosbe.onrender.com/api/v1";
 
+const parseProductSizes = (size) => {
+  if (!size) return [];
+
+  if (Array.isArray(size)) {
+    return size.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof size === "string") {
+    try {
+      const parsed = JSON.parse(size);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
+      }
+    } catch {
+      return size
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+};
+
 const ProductDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [selectedImage, setSelectedImage] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedVariantSku, setSelectedVariantSku] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("DESCRIPTION");
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cartMessage, setCartMessage] = useState("");
 
-  // FETCH PRODUCT FROM MONGODB
+  const productName = product?.name || product?.productName || "Product";
+
+  // VARIANTS
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  const hasVariants = variants.length > 0;
+
+  const selectedVariant = hasVariants
+    ? variants.find((variant) => variant.sku === selectedVariantSku) || null
+    : null;
+
+  const stock = hasVariants
+    ? Number(selectedVariant?.stock) || 0
+    : Number(product?.stock) || 0;
+
+  const availableSizes = parseProductSizes(product?.size);
+  const requiresSize = !hasVariants && availableSizes.length > 0;
+
+  const getVariantImages = (variant) =>
+    Array.isArray(variant?.images)
+      ? variant.images
+          .map((image) => (typeof image === "string" ? image : image?.url))
+          .filter(Boolean)
+      : [];
+
+  const getVariantLabel = (variant) => {
+    const optionLabel = Array.isArray(variant?.options)
+      ? variant.options
+          .map((option) => `${option.name}: ${option.value}`)
+          .join(" / ")
+      : "";
+
+    return optionLabel || variant?.sku || "Variant";
+  };
+
+  // PRICE
+  const formatPrice = (price) => {
+    if (price === undefined || price === null || price === "") {
+      return "Price unavailable";
+    }
+
+    if (typeof price === "string" && /[₹$€£]/.test(price)) {
+      return price;
+    }
+
+    return `₹${Number(price).toLocaleString("en-IN")}`;
+  };
+
+  // PRODUCT IMAGES
+  const baseProductImages = product
+    ? Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : product.image
+        ? [product.image]
+        : []
+    : [];
+
+  const variantImages = getVariantImages(selectedVariant);
+
+  const productImages =
+    hasVariants && variantImages.length > 0 ? variantImages : baseProductImages;
+
+  // FETCH PRODUCT
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
         setError("");
+        setProduct(null);
+        setQuantity(1);
+        setSelectedSize("");
+        setSelectedVariantSku("");
+        setCartMessage("");
 
         const response = await axios.get(`${API_URL}/products/${id}`);
-
         const data = response.data;
 
         const fetchedProduct =
@@ -49,9 +145,26 @@ const ProductDetails = () => {
 
         setProduct(fetchedProduct);
 
-        const images =
-          Array.isArray(fetchedProduct.images) &&
-          fetchedProduct.images.length > 0
+        const fetchedVariants = Array.isArray(fetchedProduct.variants)
+          ? fetchedProduct.variants
+          : [];
+
+        const firstAvailableVariant =
+          fetchedVariants.find((variant) => Number(variant.stock) > 0) ||
+          fetchedVariants[0];
+
+        setSelectedVariantSku(firstAvailableVariant?.sku || "");
+
+        const firstVariantImage =
+          firstAvailableVariant?.images?.[0]?.url ||
+          (typeof firstAvailableVariant?.images?.[0] === "string"
+            ? firstAvailableVariant.images[0]
+            : "");
+
+        const images = firstVariantImage
+          ? [firstVariantImage]
+          : Array.isArray(fetchedProduct.images) &&
+              fetchedProduct.images.length > 0
             ? fetchedProduct.images
             : fetchedProduct.image
               ? [fetchedProduct.image]
@@ -59,10 +172,9 @@ const ProductDetails = () => {
 
         setSelectedImage(images[0] || "");
 
-        // FETCH OTHER PRODUCTS
+        // RELATED PRODUCTS
         try {
           const productsResponse = await axios.get(`${API_URL}/products`);
-
           const productsData = productsResponse.data;
 
           const allProducts = Array.isArray(productsData)
@@ -73,7 +185,10 @@ const ProductDetails = () => {
               [];
 
           const related = allProducts
-            .filter((item) => item._id !== fetchedProduct._id)
+            .filter(
+              (item) =>
+                item._id !== fetchedProduct._id && item.isActive !== false,
+            )
             .slice(0, 3);
 
           setRelatedProducts(related);
@@ -83,17 +198,82 @@ const ProductDetails = () => {
       } catch (err) {
         console.error("Product fetching error:", err);
 
-        setError(err.response?.data?.message || "Unable to load this product.");
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Unable to load this product.",
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchProduct();
-    }
+    if (id) fetchProduct();
   }, [id]);
 
+  // VALIDATE SELECTION
+  const validateSelection = () => {
+    if (!product) return false;
+
+    if (hasVariants && !selectedVariant) {
+      setCartMessage("Please select a variant before continuing.");
+      return false;
+    }
+
+    if (stock <= 0) {
+      setCartMessage("This selection is currently out of stock.");
+      return false;
+    }
+
+    if (requiresSize && !selectedSize) {
+      setCartMessage("Please select a size before continuing.");
+      return false;
+    }
+
+    if (quantity > stock) {
+      setCartMessage(`Only ${stock} pieces are available.`);
+      return false;
+    }
+
+    return true;
+  };
+
+  // CART PRODUCT
+  const getCartProduct = () => ({
+    ...product,
+    name: productName,
+    image: selectedImage || variantImages[0] || baseProductImages[0] || "",
+    price: Number(product.price),
+    size: selectedSize || "",
+    selectedVariant: selectedVariant
+      ? {
+          sku: selectedVariant.sku,
+          stock: Number(selectedVariant.stock) || 0,
+          options: selectedVariant.options || [],
+          images: selectedVariant.images || [],
+        }
+      : null,
+    sku: selectedVariant?.sku || "",
+    variantOptions: selectedVariant?.options || [],
+  });
+
+  // ADD TO CART
+  const handleAddToCart = () => {
+    if (!validateSelection()) return;
+
+    addToCart(getCartProduct(), quantity);
+    setCartMessage("Product added to your cart!");
+  };
+
+  // BUY NOW
+  const handleBuyNow = () => {
+    if (!validateSelection()) return;
+
+    addToCart(getCartProduct(), quantity);
+    navigate("/checkout");
+  };
+
+  // SERVICES
   const services = [
     {
       icon: ShieldCheck,
@@ -118,27 +298,6 @@ const ProductDetails = () => {
   ];
 
   const tabs = ["DESCRIPTION", "SPECIFICATIONS", "REVIEWS"];
-
-  // PRICE FORMAT
-  const formatPrice = (price) => {
-    if (price === undefined || price === null || price === "") {
-      return "Price unavailable";
-    }
-
-    if (typeof price === "string" && price.includes("$")) {
-      return price;
-    }
-
-    return `$${Number(price).toLocaleString("en-US")}`;
-  };
-
-  // PRODUCT IMAGES
-  const productImages =
-    product?.images?.length > 0
-      ? product.images
-      : product?.image
-        ? [product.image]
-        : [];
 
   // LOADING
   if (loading) {
@@ -165,11 +324,20 @@ const ProductDetails = () => {
     );
   }
 
-  // PRODUCT SPECIFICATIONS
+  // SPECIFICATIONS
   const specifications = {
     Brand: product.brand,
     Category: product.category,
-    Stock: product.stock,
+    Stock: hasVariants
+      ? variants.reduce(
+          (total, variant) => total + (Number(variant.stock) || 0),
+          0,
+        )
+      : product.stock,
+    ...(hasVariants
+      ? { Variants: variants.map(getVariantLabel).join(", ") }
+      : {}),
+    ...(requiresSize ? { Sizes: availableSizes.join(", ") } : {}),
     ...(product.specification || {}),
   };
 
@@ -179,27 +347,20 @@ const ProductDetails = () => {
       <div className="max-w-[1200px] mx-auto px-6 md:px-10 pt-8">
         <p className="text-[10px] text-gray-400">
           <Link to="/">Home</Link>
-
           <span className="mx-1">›</span>
-
           <Link to="/collections">Collections</Link>
-
           <span className="mx-1">›</span>
-
           <span>{product.category || "Products"}</span>
-
           <span className="mx-1">›</span>
-
-          <span className="text-[#421713]">{product.name}</span>
+          <span className="text-[#421713]">{productName}</span>
         </p>
       </div>
 
       {/* PRODUCT DETAILS */}
       <section className="max-w-[1200px] mx-auto px-6 md:px-10 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-          {/* LEFT IMAGE GALLERY */}
+          {/* IMAGE GALLERY */}
           <div className="flex gap-3">
-            {/* THUMBNAILS */}
             <div className="flex flex-col gap-2 w-[55px] shrink-0">
               {productImages.map((image, index) => (
                 <button
@@ -213,19 +374,18 @@ const ProductDetails = () => {
                 >
                   <img
                     src={image}
-                    alt={`${product.name} view ${index + 1}`}
+                    alt={`${productName} view ${index + 1}`}
                     className="w-full h-full object-contain"
                   />
                 </button>
               ))}
             </div>
 
-            {/* MAIN IMAGE */}
             <div className="relative flex-1 border border-gray-100 aspect-square bg-white">
               {selectedImage ? (
                 <img
                   src={selectedImage}
-                  alt={product.name}
+                  alt={productName}
                   className="w-full h-full object-contain p-5"
                 />
               ) : (
@@ -250,18 +410,24 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* RIGHT PRODUCT INFORMATION */}
+          {/* PRODUCT INFORMATION */}
           <div className="flex flex-col justify-center">
-            {/* CATEGORY */}
             <div>
-              <span className="bg-red-500 text-white text-[9px] px-3 py-1">
-                {product.stock > 0 ? "AVAILABLE" : "SALE"}
+              <span
+                className={`text-white text-[9px] px-3 py-1 ${
+                  stock > 0 ? "bg-green-700" : "bg-red-600"
+                }`}
+              >
+                {stock > 0 ? "IN STOCK" : "OUT OF STOCK"}
               </span>
             </div>
 
-            {/* PRODUCT NAME */}
-            <h1 className="text-sm font-semibold tracking-[1px] mt-5 uppercase">
-              {product.name}
+            <p className="text-[10px] tracking-[2px] text-gray-400 mt-5 uppercase">
+              {product.brand || "CHRONOS COLLECTION"}
+            </p>
+
+            <h1 className="text-xl md:text-2xl font-semibold tracking-[1px] mt-2 uppercase">
+              {productName}
             </h1>
 
             {/* RATING */}
@@ -270,7 +436,7 @@ const ProductDetails = () => {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
-                    size={11}
+                    size={12}
                     fill={
                       star <= Math.round(product.rating || 0)
                         ? "#a18a55"
@@ -287,57 +453,207 @@ const ProductDetails = () => {
             </div>
 
             {/* PRICE */}
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-base font-medium">
+            <div className="mt-4">
+              <span className="text-xl font-medium">
                 {formatPrice(product.price)}
               </span>
             </div>
 
             {/* DESCRIPTION */}
-            <p className="text-[10px] text-gray-500 mt-2">
-              {product.description}
+            <p className="text-xs text-gray-500 mt-4 leading-6">
+              {product.description ||
+                "Discover timeless design and exceptional craftsmanship with this CHRONOS collection piece."}
             </p>
 
+            {/* STOCK */}
+            <p className="text-[10px] mt-3 text-gray-500">
+              {stock > 0
+                ? `${stock} pieces available`
+                : "Currently unavailable"}
+            </p>
+
+            {/* VARIANT SELECTION */}
+            {hasVariants ? (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-semibold tracking-widest">
+                    SELECT VARIANT
+                  </p>
+
+                  {selectedVariant && (
+                    <p className="text-[10px] text-gray-500">
+                      Selected: {getVariantLabel(selectedVariant)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {variants.map((variant, index) => {
+                    const isSelected = selectedVariantSku === variant.sku;
+
+                    const variantStock = Number(variant.stock) || 0;
+
+                    return (
+                      <button
+                        key={variant.sku || index}
+                        type="button"
+                        disabled={variantStock <= 0}
+                        onClick={() => {
+                          setSelectedVariantSku(variant.sku);
+                          setQuantity(1);
+                          setCartMessage("");
+
+                          const images = getVariantImages(variant);
+
+                          setSelectedImage(
+                            images[0] || baseProductImages[0] || "",
+                          );
+                        }}
+                        className={`border px-3 py-3 text-left transition ${
+                          isSelected
+                            ? "border-[#421713] bg-[#421713] text-white"
+                            : "border-gray-200 text-[#421713] hover:border-[#421713]"
+                        } disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >
+                        <span className="block text-[10px] font-semibold">
+                          {getVariantLabel(variant)}
+                        </span>
+
+                        <span
+                          className={`block text-[9px] mt-1 ${
+                            isSelected ? "text-white/80" : "text-gray-500"
+                          }`}
+                        >
+                          SKU: {variant.sku || "N/A"} · {variantStock} available
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              requiresSize && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[10px] font-semibold tracking-widest">
+                      SELECT SIZE
+                    </p>
+
+                    {selectedSize && (
+                      <p className="text-[10px] text-gray-500">
+                        Selected: {selectedSize}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {availableSizes.map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => {
+                          setSelectedSize(size);
+                          setCartMessage("");
+                        }}
+                        className={`min-w-[42px] h-[40px] px-3 border text-[10px] font-medium transition ${
+                          selectedSize === size
+                            ? "bg-[#421713] text-white border-[#421713]"
+                            : "border-gray-300 text-[#421713] hover:border-[#421713]"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
+
             {/* QUANTITY AND CART */}
-            <div className="flex items-center gap-3 mt-6">
+            <div className="flex flex-wrap items-center gap-3 mt-6">
               <div className="flex items-center border border-gray-200">
                 <button
                   onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                  className="px-2 py-2"
+                  disabled={quantity <= 1}
+                  className="px-3 py-3 disabled:opacity-30"
+                  aria-label="Decrease quantity"
                 >
-                  <Minus size={10} />
+                  <Minus size={12} />
                 </button>
 
-                <span className="text-[10px] px-2">{quantity}</span>
+                <span className="text-xs px-3 min-w-[35px] text-center">
+                  {quantity}
+                </span>
 
                 <button
                   onClick={() =>
-                    setQuantity((prev) =>
-                      Math.min(product.stock || 99, prev + 1),
-                    )
+                    setQuantity((prev) => Math.min(stock, prev + 1))
                   }
-                  disabled={quantity >= product.stock && product.stock > 0}
-                  className="px-2 py-2"
+                  disabled={quantity >= stock}
+                  className="px-3 py-3 disabled:opacity-30"
+                  aria-label="Increase quantity"
                 >
-                  <Plus size={10} />
+                  <Plus size={12} />
                 </button>
               </div>
 
               <button
-                disabled={!product.stock}
-                className="flex-1 bg-[#f2c035] text-black py-3 text-[10px] font-medium hover:bg-[#421713] hover:text-white transition disabled:opacity-50"
+                onClick={handleBuyNow}
+                disabled={stock <= 0}
+                className="flex-1 min-w-[110px] bg-[#f2c035] text-black py-3 text-[10px] font-semibold hover:bg-[#421713] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 BUY NOW
               </button>
 
               <button
-                disabled={!product.stock}
-                className="border border-gray-200 p-3 hover:bg-[#f2c035] transition disabled:opacity-50"
+                onClick={handleAddToCart}
+                disabled={stock <= 0}
+                className="border border-gray-200 p-3 hover:bg-[#f2c035] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Add to cart"
+                title="Add to cart"
               >
-                <ShoppingBag size={13} />
+                <ShoppingBag size={15} />
               </button>
             </div>
+
+            {/* CART MESSAGE */}
+            {cartMessage && (
+              <div
+                className={`flex items-center justify-between gap-3 mt-4 border px-4 py-3 ${
+                  cartMessage.includes("Please select") ||
+                  cartMessage.includes("out of stock") ||
+                  cartMessage.includes("Only ")
+                    ? "bg-red-50 border-red-200"
+                    : "bg-green-50 border-green-200"
+                }`}
+              >
+                <div
+                  className={`flex items-center gap-2 ${
+                    cartMessage.includes("Please select") ||
+                    cartMessage.includes("out of stock") ||
+                    cartMessage.includes("Only ")
+                      ? "text-red-700"
+                      : "text-green-700"
+                  }`}
+                >
+                  <Check size={15} />
+                  <p className="text-[10px]">{cartMessage}</p>
+                </div>
+
+                {!(
+                  cartMessage.includes("Please select") ||
+                  cartMessage.includes("out of stock") ||
+                  cartMessage.includes("Only ")
+                ) && (
+                  <Link
+                    to="/cart"
+                    className="text-[10px] font-semibold underline text-green-800"
+                  >
+                    VIEW CART
+                  </Link>
+                )}
+              </div>
+            )}
 
             {/* PRODUCT BENEFITS */}
             <div className="grid grid-cols-3 border-t border-gray-200 mt-6 pt-5">
@@ -385,14 +701,12 @@ const ProductDetails = () => {
         </div>
 
         <div className="py-5 min-h-[100px]">
-          {/* DESCRIPTION */}
           {activeTab === "DESCRIPTION" && (
-            <p className="text-[10px] leading-5 text-gray-500 max-w-[700px]">
+            <p className="text-[10px] leading-6 text-gray-500 max-w-[700px]">
               {product.description || "No description available."}
             </p>
           )}
 
-          {/* SPECIFICATIONS */}
           {activeTab === "SPECIFICATIONS" && (
             <div className="max-w-[600px] text-[10px] text-gray-500 space-y-3">
               {Object.entries(specifications)
@@ -417,7 +731,6 @@ const ProductDetails = () => {
             </div>
           )}
 
-          {/* REVIEWS */}
           {activeTab === "REVIEWS" && (
             <div className="text-[10px] text-gray-500">
               <p className="font-medium text-[#421713]">Customer Reviews</p>
@@ -451,35 +764,52 @@ const ProductDetails = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {relatedProducts.map((item) => (
-            <Link to={`/product/${item._id}`} key={item._id} className="group">
-              <div className="relative aspect-square border border-gray-100 overflow-hidden">
-                {item.image && (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-contain p-6 group-hover:scale-105 transition duration-500"
-                  />
-                )}
+          {relatedProducts.map((item) => {
+            const itemName = item.name || item.productName;
+            const itemImage = item.image || item.images?.[0];
 
-                <button
-                  type="button"
-                  onClick={(e) => e.preventDefault()}
-                  className="absolute top-3 right-3 text-[#e8b52d]"
-                >
-                  <Heart size={15} strokeWidth={1} />
-                </button>
-              </div>
+            return (
+              <Link
+                to={`/product/${item._id}`}
+                key={item._id}
+                className="group"
+              >
+                <div className="relative aspect-square border border-gray-100 overflow-hidden bg-white">
+                  {itemImage ? (
+                    <img
+                      src={itemImage}
+                      alt={itemName}
+                      className="w-full h-full object-contain p-6 group-hover:scale-105 transition duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                      No image
+                    </div>
+                  )}
 
-              <div className="text-center pt-3">
-                <h3 className="text-[9px] font-medium">{item.name}</h3>
+                  <span className="absolute top-3 left-3 bg-[#421713] text-white text-[8px] px-2 py-1">
+                    CHRONOS
+                  </span>
+                </div>
 
-                <p className="text-[9px] text-gray-500 mt-1">
-                  {formatPrice(item.price)}
-                </p>
-              </div>
-            </Link>
-          ))}
+                <div className="text-center pt-3">
+                  <h3 className="text-[10px] font-medium uppercase">
+                    {itemName}
+                  </h3>
+
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {formatPrice(item.price)}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+
+          {relatedProducts.length === 0 && (
+            <p className="col-span-full text-center text-xs text-gray-400 py-8">
+              No related products available.
+            </p>
+          )}
         </div>
       </section>
 

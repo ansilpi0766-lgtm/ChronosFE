@@ -22,6 +22,7 @@ const useCreateOrder = () => {
         products: cart.map((item) => ({
           product: item._id,
           quantity: item.quantity,
+          size: item.size || "",
         })),
         shippingAddress,
       };

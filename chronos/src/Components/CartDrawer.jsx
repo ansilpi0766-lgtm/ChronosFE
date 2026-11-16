@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { useCart } from "../Context/CartContext";
+import picture from "../assets/picture.png";
 
 const CartDrawer = ({ onClose }) => {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ const CartDrawer = ({ onClose }) => {
     "₹" + Number(price || 0).toLocaleString("en-IN");
 
   const handleCheckout = () => {
+    if (cart.length === 0) return;
+
     onClose();
     navigate("/checkout");
   };
@@ -26,7 +29,7 @@ const CartDrawer = ({ onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between border-b px-5 py-4">
           <h2 className="font-serif text-sm font-semibold text-[#421713]">
-            Shopping Bag
+            Shopping Bag ({cart.length})
           </h2>
 
           <button onClick={onClose}>
@@ -55,14 +58,17 @@ const CartDrawer = ({ onClose }) => {
           ) : (
             cart.map((item) => (
               <div
-                key={item._id}
+                key={item.cartItemId}
                 className="flex gap-4 border-b border-gray-200 px-5 py-6"
               >
                 {/* Product Image */}
                 <div className="h-[75px] w-[70px] shrink-0 border border-gray-200 p-1">
                   <img
-                    src={item.image}
+                    src={item.image || picture}
                     alt={item.name}
+                    onError={(e) => {
+                      e.currentTarget.src = picture;
+                    }}
                     className="h-full w-full object-contain"
                   />
                 </div>
@@ -78,13 +84,23 @@ const CartDrawer = ({ onClose }) => {
                       <p className="mt-1 text-[11px] text-gray-400">
                         {item.brand || "CHRONOS"}
                       </p>
+
+                      {/* Selected Size */}
+                      {item.size && (
+                        <p className="mt-1 text-[11px] text-gray-500">
+                          Size: {item.size}
+                        </p>
+                      )}
                     </div>
 
+                    {/* REMOVE BUTTON */}
                     <button
-                      onClick={() => removeFromCart(item._id)}
-                      className="text-gray-400 hover:text-red-500"
+                      type="button"
+                      onClick={() => removeFromCart(item.cartItemId)}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center text-gray-400 transition hover:text-red-500"
+                      aria-label={`Remove ${item.name} from shopping bag`}
                     >
-                      <X size={15} />
+                      <X size={17} />
                     </button>
                   </div>
 
@@ -95,10 +111,12 @@ const CartDrawer = ({ onClose }) => {
                   {/* Quantity Controls */}
                   <div className="mt-3 flex h-7 w-[85px] items-center justify-between border border-gray-300 px-2">
                     <button
+                      type="button"
                       onClick={() =>
-                        updateQuantity(item._id, item.quantity - 1)
+                        updateQuantity(item.cartItemId, item.quantity - 1)
                       }
-                      className="text-gray-500"
+                      disabled={item.quantity <= 1}
+                      className="text-gray-500 disabled:opacity-30"
                     >
                       −
                     </button>
@@ -106,14 +124,19 @@ const CartDrawer = ({ onClose }) => {
                     <span className="text-xs">{item.quantity}</span>
 
                     <button
+                      type="button"
                       onClick={() =>
-                        updateQuantity(item._id, item.quantity + 1)
+                        updateQuantity(item.cartItemId, item.quantity + 1)
                       }
                       className="text-gray-500"
                     >
                       +
                     </button>
                   </div>
+
+                  <p className="mt-2 text-[11px] text-gray-500">
+                    Total: {formatPrice(item.price * item.quantity)}
+                  </p>
                 </div>
               </div>
             ))
