@@ -4,7 +4,7 @@ const CheckoutStep = ({ step = 1 }) => {
   const steps = ["Shipping", "Payment", "Review"];
 
   return (
-    <div className="flex items-center gap-3 text-[8px]">
+    <div className="flex items-center gap-4 text-base">
       {steps.map((name, index) => {
         const stepNumber = index + 1;
         const isActive = step === stepNumber;
@@ -13,12 +13,12 @@ const CheckoutStep = ({ step = 1 }) => {
         return (
           <React.Fragment key={name}>
             <div
-              className={`flex items-center gap-1.5 ${
+              className={`flex items-center gap-2 ${
                 isActive || isCompleted ? "text-black" : "text-gray-400"
               }`}
             >
               <span
-                className={`flex h-3 w-3 items-center justify-center rounded-full text-[7px] ${
+                className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${
                   isActive || isCompleted
                     ? "bg-yellow-400 text-black"
                     : "bg-gray-300 text-white"
@@ -27,11 +27,11 @@ const CheckoutStep = ({ step = 1 }) => {
                 {isCompleted ? "✓" : stepNumber}
               </span>
 
-              <span>{name}</span>
+              <span className="text-base font-semibold">{name}</span>
             </div>
 
             {index < steps.length - 1 && (
-              <div className="h-px w-6 bg-gray-300" />
+              <div className="h-px w-8 bg-gray-300" />
             )}
           </React.Fragment>
         );

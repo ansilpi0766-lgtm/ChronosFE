@@ -15,10 +15,6 @@ import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import Profile from "./Pages/Profile";
 
-import Timepieces from "./Pages/Timepieces";
-import Accessories from "./Pages/Accessories";
-import FineArt from "./Pages/FineArt";
-
 // Layout
 const Layout = () => {
   return (
@@ -66,18 +62,6 @@ const router = createBrowserRouter([
       {
         path: "Collection",
         element: <Collection />,
-      },
-      {
-        path: "timepieces",
-        element: <Timepieces />,
-      },
-      {
-        path: "accessories",
-        element: <Accessories />,
-      },
-      {
-        path: "fine-art",
-        element: <FineArt />,
       },
       {
         path: "product/:id",

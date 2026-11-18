@@ -1,59 +1,102 @@
 import React from "react";
+import { FaCreditCard } from "react-icons/fa";
 
 const PaymentForm = ({ onNext, onBack }) => {
   return (
-    <div className="w-full">
+    <div className="relative -top-3 w-full min-h-[420px]">
       {/* Back Button */}
       <button
+        type="button"
         onClick={onBack}
-        className="mb-6 flex items-center gap-1 text-[8px] text-gray-400 hover:text-gray-600"
+        className="mb-6 flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600"
       >
-        <span className="text-[10px]">←</span>
+        <span className="text-base">←</span>
         Back
       </button>
 
       {/* Payment Details Heading */}
-      <h2 className="mb-4 flex items-center gap-2 text-[9px] font-medium">
-        <span className="text-[11px]">▣</span>
+      <h2 className="mb-6 flex items-center gap-2 text-lg font-medium">
+        <FaCreditCard className="text-base text-[#421713]" />
         Payment Details
       </h2>
 
       {/* Name on Card */}
-      <input
-        type="text"
-        placeholder="Name on Card"
-        className="mb-2 h-6 w-full bg-gray-200 px-3 text-[8px] outline-none"
-      />
+      <div className="mb-4">
+        <label className="mb-2 block text-xs font-medium text-gray-700">
+          Name on Card
+        </label>
+
+        <input
+          type="text"
+          name="cardholderName"
+          autoComplete="cc-name"
+          placeholder="Enter name on card"
+          className="h-11 w-full border border-gray-300 bg-gray-50 px-4 text-sm outline-none focus:border-[#421713]"
+        />
+      </div>
 
       {/* Card Number */}
-      <input
-        type="text"
-        placeholder="Card Number"
-        className="mb-2 h-6 w-full bg-gray-200 px-3 text-[8px] outline-none"
-      />
+      <div className="mb-4">
+        <label className="mb-2 block text-xs font-medium text-gray-700">
+          Card Number
+        </label>
+
+        <input
+          type="text"
+          name="cardNumber"
+          autoComplete="cc-number"
+          inputMode="numeric"
+          placeholder="1234 5678 9012 3456"
+          className="h-11 w-full border border-gray-300 bg-gray-50 px-4 text-sm outline-none focus:border-[#421713]"
+        />
+      </div>
 
       {/* Expiry + CVV */}
-      <div className="mb-4 flex gap-2">
-        <input
-          type="text"
-          placeholder="MM/YY"
-          className="h-6 w-1/2 bg-gray-200 px-3 text-[8px] outline-none"
-        />
+      <div className="mb-6 flex w-full gap-4">
+        <div className="w-1/2">
+          <label className="mb-2 block text-xs font-medium text-gray-700">
+            Expiry Date
+          </label>
 
-        <input
-          type="text"
-          placeholder="CVV"
-          className="h-6 w-1/2 bg-gray-200 px-3 text-[8px] outline-none"
-        />
+          <input
+            type="text"
+            name="cardExpiry"
+            autoComplete="cc-exp"
+            inputMode="numeric"
+            placeholder="MM/YY"
+            className="h-11 w-full border border-gray-300 bg-gray-50 px-4 text-sm outline-none focus:border-[#421713]"
+          />
+        </div>
+
+        <div className="w-1/2">
+          <label className="mb-2 block text-xs font-medium text-gray-700">
+            CVV
+          </label>
+
+          <input
+            type="password"
+            name="cardCvv"
+            autoComplete="cc-csc"
+            inputMode="numeric"
+            placeholder="123"
+            className="h-11 w-full border border-gray-300 bg-gray-50 px-4 text-sm outline-none focus:border-[#421713]"
+          />
+        </div>
       </div>
 
       {/* Review Order Button */}
       <button
+        type="button"
         onClick={onNext}
-        className="h-6 w-full bg-yellow-400 text-[7px] font-medium hover:bg-yellow-500"
+        className="h-11 w-full bg-yellow-400 text-xs font-semibold tracking-wider text-black transition hover:bg-yellow-500"
       >
-        REVIEW ORDER
+        REVIEW ORDER →
       </button>
+
+      {/* Security Information */}
+      <p className="mt-4 text-center text-xs text-gray-400">
+        🔒 Your payment information is secure and encrypted.
+      </p>
     </div>
   );
 };

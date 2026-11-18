@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Globe, Search, ShoppingCart, User, X } from "lucide-react";
 
 import CartDrawer from "./CartDrawer";
@@ -7,9 +7,46 @@ import { useCart } from "../Context/CartContext";
 import { api } from "../Services/api";
 
 const Navbar = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
+
+  // Language state
+  const [language, setLanguage] = useState("English");
+
+  const isArabic = language === "Arabic";
+
+  // Translations
+  const translations = {
+    English: {
+      collections: "Collections",
+      timepieces: "Timepieces",
+      accessories: "Accessories",
+      fineArt: "Fine Art",
+      searchPlaceholder: "Search products...",
+      searchMessage: "Search by product name, brand or category.",
+      loading: "Loading products...",
+      noProducts: "No products found.",
+      error: "Unable to load products. Please try again.",
+    },
+
+    Arabic: {
+      collections: "المجموعات",
+      timepieces: "الساعات",
+      accessories: "الإكسسوارات",
+      fineArt: "الفنون الجميلة",
+      searchPlaceholder: "ابحث عن المنتجات...",
+      searchMessage: "ابحث باسم المنتج أو العلامة التجارية أو الفئة",
+      loading: "جارٍ تحميل المنتجات...",
+      noProducts: "لم يتم العثور على منتجات.",
+      error: "تعذر تحميل المنتجات. يرجى المحاولة مرة أخرى.",
+    },
+  };
+
+  const t = translations[language];
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,7 +73,6 @@ const Navbar = () => {
 
         const response = await api.get("/products");
 
-        // Supports common API response formats
         const data = response.data;
 
         const productList = Array.isArray(data)
@@ -52,7 +88,7 @@ const Navbar = () => {
         setProducts(productList);
       } catch (err) {
         console.error("Product search error:", err);
-        setError("Unable to load products. Please try again.");
+        setError(t.error);
       } finally {
         setLoading(false);
       }
@@ -61,7 +97,7 @@ const Navbar = () => {
     fetchProducts();
   }, [searchOpen]);
 
-  // Filter products based on search text
+  // Filter products
   const filteredProducts = useMemo(() => {
     const search = searchText.trim().toLowerCase();
 
@@ -78,36 +114,60 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="absolute top-0 left-0 z-50 w-full flex items-center justify-between px-8 py-5 text-[#FFEDD0]">
+      {/* Navbar */}
+      <nav
+        dir={isArabic ? "rtl" : "ltr"}
+        className={`z-50 flex w-full items-center justify-between px-8 py-5 text-[#FFEDD0] ${
+          isHomePage
+            ? "absolute top-0 left-0 bg-transparent"
+            : "relative bg-[#3D1613] shadow-sm"
+        }`}
+      >
         {/* Left Navigation */}
-        <div className="flex items-center gap-7 ml-10">
+        <div
+          className={`flex items-center gap-7 ${isArabic ? "mr-10" : "ml-10"}`}
+        >
           <Link to="/Collection" className="cursor-pointer text-sm">
-            Collections
+            {t.collections}
           </Link>
 
           <Link to="/timepieces" className="cursor-pointer text-sm">
-            Timepieces
+            {t.timepieces}
           </Link>
 
           <Link to="/accessories" className="cursor-pointer text-sm">
-            Accessories
+            {t.accessories}
           </Link>
 
           <Link to="/fine-art" className="cursor-pointer text-sm">
-            Fine Art
+            {t.fineArt}
           </Link>
         </div>
 
         {/* Center Logo */}
-        <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+        <Link to="/" className="absolute left-1/2 -translate-x-1/2" dir="ltr">
           <h1 className="text-2xl font-normal tracking-widest">CHRONOS</h1>
         </Link>
 
         {/* Right Side */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-5" dir="ltr">
+          {/* Language Selector */}
           <div className="flex items-center gap-2">
             <Globe size={17} />
-            <p className="text-sm">English</p>
+
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="cursor-pointer bg-transparent text-sm outline-none"
+            >
+              <option value="English" className="bg-[#3D1613] text-white">
+                English
+              </option>
+
+              <option value="Arabic" className="bg-[#3D1613] text-white">
+                العربية
+              </option>
+            </select>
           </div>
 
           {/* Search Button */}
@@ -143,27 +203,36 @@ const Navbar = () => {
 
         {/* Search Box */}
         {searchOpen && (
-          <div className="absolute right-8 top-20 w-80 rounded-lg border border-[#FFEDD0]/30 bg-black/95 p-4 shadow-xl">
+          <div
+            dir={isArabic ? "rtl" : "ltr"}
+            className={`absolute ${
+              isArabic ? "left-8" : "right-8"
+            } top-20 z-[60] w-80 rounded-lg border p-4 shadow-xl ${
+              isHomePage
+                ? "border-[#FFEDD0]/30 bg-black/95"
+                : "border-[#FFEDD0]/20 bg-[#3D1613]"
+            }`}
+          >
+            {/* Search Input */}
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder={t.searchPlaceholder}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               autoFocus
-              className="w-full border-b border-[#FFEDD0] bg-transparent px-2 py-3 text-white outline-none placeholder:text-white/60"
+              className={`w-full border-b border-[#FFEDD0] bg-transparent px-2 py-3 text-white outline-none placeholder:text-white/60 ${
+                isArabic ? "text-right" : "text-left"
+              }`}
             />
 
+            {/* Search Results */}
             <div className="mt-3 max-h-80 overflow-y-auto">
               {!searchText.trim() && (
-                <p className="text-sm text-white/60">
-                  Search by product name, brand or category.
-                </p>
+                <p className="text-sm text-white/60">{t.searchMessage}</p>
               )}
 
               {loading && (
-                <p className="py-3 text-sm text-white/70">
-                  Loading products...
-                </p>
+                <p className="py-3 text-sm text-white/70">{t.loading}</p>
               )}
 
               {error && <p className="py-3 text-sm text-red-400">{error}</p>}
@@ -172,9 +241,7 @@ const Navbar = () => {
                 !error &&
                 searchText.trim() &&
                 filteredProducts.length === 0 && (
-                  <p className="py-3 text-sm text-white/70">
-                    No products found.
-                  </p>
+                  <p className="py-3 text-sm text-white/70">{t.noProducts}</p>
                 )}
 
               {!loading &&

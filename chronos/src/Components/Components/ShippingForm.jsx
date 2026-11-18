@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Truck } from "lucide-react";
 
 const ShippingForm = ({ onNext, onShippingChange }) => {
   const [shipping, setShipping] = useState({
@@ -22,18 +23,20 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     onShippingChange(shipping);
     onNext();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full">
-      <h2 className="mb-3 text-[9px] font-medium">
-        🚚 &nbsp; Shipping Information
+    <form onSubmit={handleSubmit} className="w-full max-w-none">
+      {/* Heading */}
+      <h2 className="mb-7 flex items-center gap-4 text-base font-normal text-[#222]">
+        <Truck size={27} strokeWidth={1.5} />
+        Shipping Information
       </h2>
 
-      <div className="mb-1 grid grid-cols-2 gap-1">
+      {/* First Name and Last Name */}
+      <div className="mb-4 grid grid-cols-2 gap-[10px]">
         <input
           name="firstName"
           value={shipping.firstName}
@@ -41,7 +44,7 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
           type="text"
           placeholder="First Name"
           required
-          className="h-5 bg-gray-200 px-2 text-[7px] outline-none"
+          className="h-[43px] w-full bg-[#E5E5E5] px-[22px] text-sm outline-none"
         />
 
         <input
@@ -51,10 +54,11 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
           type="text"
           placeholder="Last Name"
           required
-          className="h-5 bg-gray-200 px-2 text-[7px] outline-none"
+          className="h-[43px] w-full bg-[#E5E5E5] px-[22px] text-sm outline-none"
         />
       </div>
 
+      {/* Email */}
       <input
         name="email"
         value={shipping.email}
@@ -62,10 +66,11 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
         type="email"
         placeholder="Email Address"
         required
-        className="mb-1 h-5 w-full bg-gray-200 px-2 text-[7px] outline-none"
+        className="mb-4 h-[43px] w-full bg-[#E5E5E5] px-[22px] text-sm outline-none"
       />
 
-      <div className="mb-1 grid grid-cols-[1.1fr_0.9fr_0.9fr] gap-1">
+      {/* City, Postal Code and Country */}
+      <div className="mb-4 grid grid-cols-3 gap-[10px]">
         <input
           name="city"
           value={shipping.city}
@@ -73,7 +78,7 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
           type="text"
           placeholder="City"
           required
-          className="h-5 bg-gray-200 px-2 text-[7px] outline-none"
+          className="h-[43px] w-full bg-[#E5E5E5] px-[22px] text-sm outline-none"
         />
 
         <input
@@ -83,7 +88,7 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
           type="text"
           placeholder="Postal Code"
           required
-          className="h-5 bg-gray-200 px-2 text-[7px] outline-none"
+          className="h-[43px] w-full bg-[#E5E5E5] px-[22px] text-sm outline-none"
         />
 
         <select
@@ -91,7 +96,7 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
           value={shipping.country}
           onChange={handleChange}
           required
-          className="h-5 bg-gray-200 px-2 text-[7px] text-gray-500 outline-none"
+          className="h-[43px] w-full bg-[#E5E5E5] px-[22px] text-sm text-gray-600 outline-none"
         >
           <option value="">Country</option>
           <option value="India">India</option>
@@ -100,6 +105,7 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
         </select>
       </div>
 
+      {/* Phone */}
       <input
         name="phone"
         value={shipping.phone}
@@ -107,12 +113,13 @@ const ShippingForm = ({ onNext, onShippingChange }) => {
         type="tel"
         placeholder="Phone Number"
         required
-        className="mb-3 h-5 w-full bg-gray-200 px-2 text-[7px] outline-none"
+        className="mb-8 h-[43px] w-full bg-[#E5E5E5] px-[22px] text-sm outline-none"
       />
 
+      {/* Continue Button */}
       <button
         type="submit"
-        className="h-5 w-full bg-yellow-400 text-[7px] font-medium hover:bg-yellow-500"
+        className="h-[35px] w-full bg-[#FFC400] text-sm font-medium text-black transition hover:bg-yellow-500"
       >
         CONTINUE TO PAYMENT
       </button>

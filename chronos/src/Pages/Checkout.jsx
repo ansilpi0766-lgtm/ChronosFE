@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaMapMarkerAlt } from "react-icons/fa";
 
 import CheckoutStep from "../Components/Components/CheckoutStep";
 import ShippingForm from "../Components/Components/ShippingForm";
@@ -61,19 +62,29 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-white px-6 py-12">
-      <div className="mx-auto w-full max-w-4xl">
+      <div className="mx-auto w-full max-w-5xl">
+        {/* Breadcrumb */}
         <p className="mb-8 text-sm text-gray-400">
           Home &gt; <span className="text-gray-600">Checkout</span>
         </p>
 
+        {/* Heading */}
         <h1 className="mb-6 text-3xl font-medium">Secure Checkout</h1>
 
+        {/* Checkout Steps */}
         <div className="mb-12">
           <CheckoutStep step={step} />
         </div>
 
+        {/* Main Checkout Layout */}
         <div className="flex items-start justify-between gap-12">
-          <div className="w-full max-w-[360px]">
+          {/* Left Side */}
+          <div
+            className={`w-full ${
+              step === 1 ? "max-w-[750px]" : "max-w-[660px]"
+            }`}
+          >
+            {/* Shipping Form */}
             {step === 1 && (
               <ShippingForm
                 onNext={() => setStep(2)}
@@ -81,6 +92,7 @@ const Checkout = () => {
               />
             )}
 
+            {/* Payment Form */}
             {step === 2 && (
               <PaymentForm
                 onNext={() => setStep(3)}
@@ -88,6 +100,7 @@ const Checkout = () => {
               />
             )}
 
+            {/* Order Review */}
             {step === 3 && (
               <div className="w-full">
                 <button
@@ -98,18 +111,24 @@ const Checkout = () => {
                   Back
                 </button>
 
-                <h2 className="mb-5 text-xl font-medium">♧ Shipping To:</h2>
+                <h2 className="mb-5 flex items-center gap-2 text-xl font-medium">
+                  <FaMapMarkerAlt className="text-[#421713]" />
+                  Shipping To:
+                </h2>
 
                 {shipping && (
                   <div className="mb-8 text-sm leading-7 text-gray-600">
                     <p>
                       {shipping.firstName} {shipping.lastName}
                     </p>
+
                     <p>{shipping.email}</p>
                     <p>{shipping.phone}</p>
+
                     <p>
                       {shipping.city}, {shipping.postalCode}
                     </p>
+
                     <p>{shipping.country}</p>
                   </div>
                 )}
@@ -120,12 +139,14 @@ const Checkout = () => {
                   className="flex h-12 w-full items-center justify-center gap-2 bg-yellow-400 text-sm font-semibold hover:bg-yellow-500 disabled:opacity-50"
                 >
                   {isLoading ? "PLACING ORDER..." : "PLACE ORDER"}
+
                   <span>🔒</span>
                 </button>
               </div>
             )}
           </div>
 
+          {/* Right Side - Order Summary */}
           <div className="w-full max-w-[350px] shrink-0">
             <OrderSummery />
           </div>
