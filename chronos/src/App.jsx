@@ -1,11 +1,18 @@
 import React from "react";
-import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
+import Membership from "./Components/Membership";
+
 import HomePage from "./Pages/HomePage";
 import Cart from "./Pages/Cart";
 import Checkout from "./Pages/Checkout";
@@ -14,14 +21,19 @@ import ProductDetails from "./Pages/ProductDetails/ProductDetails";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import Profile from "./Pages/Profile";
-
+import FAQ from "./Pages/FAQ";
 // Layout
 const Layout = () => {
+  const location = useLocation();
+
   return (
     <>
       <Navbar />
+
       <Outlet />
-      <Footer />
+
+      {/* Hide global Footer on Contact page */}
+      {location.pathname !== "/contact" && <Footer />}
 
       <ToastContainer
         position="top-right"
@@ -74,6 +86,18 @@ const router = createBrowserRouter([
       {
         path: "register",
         element: <Register />,
+      },
+      {
+        path: "about",
+        element: <Membership />,
+      },
+      {
+        path: "contact",
+        element: <Footer />,
+      },
+      {
+        path: "faq",
+        element: <FAQ />,
       },
     ],
   },

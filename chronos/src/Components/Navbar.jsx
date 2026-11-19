@@ -13,31 +13,27 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
-
-  // Language state
   const [language, setLanguage] = useState("English");
 
   const isArabic = language === "Arabic";
 
-  // Translations
   const translations = {
     English: {
       collections: "Collections",
-      timepieces: "Timepieces",
-      accessories: "Accessories",
-      fineArt: "Fine Art",
+      about: "About",
+      contact: "Contact",
+      faq: "FAQ",
       searchPlaceholder: "Search products...",
       searchMessage: "Search by product name, brand or category.",
       loading: "Loading products...",
       noProducts: "No products found.",
       error: "Unable to load products. Please try again.",
     },
-
     Arabic: {
       collections: "المجموعات",
-      timepieces: "الساعات",
-      accessories: "الإكسسوارات",
-      fineArt: "الفنون الجميلة",
+      about: "من نحن",
+      contact: "اتصل بنا",
+      faq: "الأسئلة الشائعة",
       searchPlaceholder: "ابحث عن المنتجات...",
       searchMessage: "ابحث باسم المنتج أو العلامة التجارية أو الفئة",
       loading: "جارٍ تحميل المنتجات...",
@@ -54,13 +50,45 @@ const Navbar = () => {
 
   const { cart } = useCart();
 
-  // Check customer login status
   const isLoggedIn = Boolean(localStorage.getItem("token"));
 
   const cartCount = cart.reduce(
     (total, item) => total + (item.quantity || 1),
     0,
   );
+
+  // Smooth scroll to homepage sections
+  useEffect(() => {
+    if (location.pathname !== "/" || !location.hash) return;
+
+    const sectionId = location.hash.substring(1);
+    let attempts = 0;
+    let animationFrame;
+
+    const scrollToSection = () => {
+      const section = document.getElementById(sectionId);
+
+      if (section) {
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+        return;
+      }
+
+      attempts++;
+
+      if (attempts < 30) {
+        animationFrame = requestAnimationFrame(scrollToSection);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(scrollToSection);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [location.pathname, location.hash]);
 
   // Fetch products when search is opened
   useEffect(() => {
@@ -72,7 +100,6 @@ const Navbar = () => {
         setError("");
 
         const response = await api.get("/products");
-
         const data = response.data;
 
         const productList = Array.isArray(data)
@@ -95,7 +122,7 @@ const Navbar = () => {
     };
 
     fetchProducts();
-  }, [searchOpen]);
+  }, [searchOpen, t.error]);
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -104,10 +131,15 @@ const Navbar = () => {
     if (!search) return [];
 
     return products.filter((product) => {
+      const category =
+        typeof product.category === "object"
+          ? product.category?.name
+          : product.category;
+
       return (
         product.name?.toLowerCase().includes(search) ||
         product.brand?.toLowerCase().includes(search) ||
-        product.category?.toLowerCase().includes(search)
+        category?.toLowerCase().includes(search)
       );
     });
   }, [products, searchText]);
@@ -127,20 +159,35 @@ const Navbar = () => {
         <div
           className={`flex items-center gap-7 ${isArabic ? "mr-10" : "ml-10"}`}
         >
-          <Link to="/Collection" className="cursor-pointer text-sm">
+          <Link
+            to="/Collection"
+            className="cursor-pointer text-sm transition hover:text-[#D9B96E]"
+          >
             {t.collections}
           </Link>
 
-          <Link to="/timepieces" className="cursor-pointer text-sm">
-            {t.timepieces}
+          {/* About */}
+          <Link
+            to="/#about"
+            className="cursor-pointer text-sm transition hover:text-[#D9B96E]"
+          >
+            {t.about}
           </Link>
 
-          <Link to="/accessories" className="cursor-pointer text-sm">
-            {t.accessories}
+          {/* Contact */}
+          <Link
+            to="/#contact"
+            className="cursor-pointer text-sm transition hover:text-[#D9B96E]"
+          >
+            {t.contact}
           </Link>
 
-          <Link to="/fine-art" className="cursor-pointer text-sm">
-            {t.fineArt}
+          {/* FAQ */}
+          <Link
+            to="/faq"
+            className="cursor-pointer text-sm transition hover:text-[#D9B96E]"
+          >
+            {t.faq}
           </Link>
         </div>
 
@@ -213,7 +260,6 @@ const Navbar = () => {
                 : "border-[#FFEDD0]/20 bg-[#3D1613]"
             }`}
           >
-            {/* Search Input */}
             <input
               type="text"
               placeholder={t.searchPlaceholder}
@@ -225,7 +271,6 @@ const Navbar = () => {
               }`}
             />
 
-            {/* Search Results */}
             <div className="mt-3 max-h-80 overflow-y-auto">
               {!searchText.trim() && (
                 <p className="text-sm text-white/60">{t.searchMessage}</p>

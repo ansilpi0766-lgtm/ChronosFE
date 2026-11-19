@@ -12,7 +12,10 @@ import { FaXTwitter } from "react-icons/fa6";
 
 const Footer = () => {
   return (
-    <footer className="relative bg-[#421713] text-[#FFEDD0] px-6 md:px-12 py-12 overflow-hidden">
+    <footer
+      id="contact"
+      className="relative scroll-mt-20 bg-[#421713] text-[#FFEDD0] px-6 md:px-12 py-12 overflow-hidden"
+    >
       {/* Main Footer Box */}
       <div className="relative max-w-[1200px] mx-auto border border-[#743027] rounded-[28px] px-8 md:px-14 pt-10 pb-8">
         {/* Top Section */}
@@ -119,7 +122,7 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition">
+                <a href="/faq" className="hover:text-white transition">
                   FAQ
                 </a>
               </li>
@@ -131,20 +134,17 @@ const Footer = () => {
             <h3 className="text-sm font-medium mb-4">Contact Us</h3>
 
             <div className="space-y-3 text-[9px] text-[#dfc8b8]">
-              {/* Location */}
               <p>
                 ◉ Sheikh Zayed Road, Dubai,
                 <br />
                 &nbsp;&nbsp;&nbsp;United Arab Emirates
               </p>
 
-              {/* Phone */}
               <p className="flex gap-2 items-center">
                 <FaPhone size={9} />
                 +971 4 123 4567
               </p>
 
-              {/* Email */}
               <p className="flex gap-2 items-center">
                 <FaEnvelope size={9} />
                 concierge@chronos.ae
@@ -156,12 +156,10 @@ const Footer = () => {
         {/* Bottom Divider */}
         <div className="border-t border-[#743027] mt-10 pt-7">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            {/* Copyright */}
             <p className="text-[10px] text-[#dfc8b8]">
               © 2026 CHRONOS. All rights reserved.
             </p>
 
-            {/* Bottom Links */}
             <div className="flex gap-6 text-[10px] text-[#dfc8b8]">
               <a href="#" className="hover:text-white transition">
                 Privacy Policy

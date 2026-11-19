@@ -8,101 +8,82 @@ import {
 } from "lucide-react";
 
 const Membership = () => {
+  const benefits = [
+    {
+      icon: ShieldCheck,
+      title: "AUTHENTICITY GUARANTEED",
+      description: "Every piece verified by our experts",
+    },
+    {
+      icon: Truck,
+      title: "WHITE GLOVE DELIVERY",
+      description: "Complimentary worldwide shipping",
+    },
+    {
+      icon: RotateCcw,
+      title: "30-DAY RETURNS",
+      description: "No questions asked returns",
+    },
+    {
+      icon: Award,
+      title: "WARRANTY",
+      description: "Coverage on all timepieces",
+    },
+  ];
+
   return (
-    <section className="w-full bg-white border-t border-gray-200 px-6 py-20">
-      {/* Top Content */}
-      <div className="max-w-[700px] mx-auto text-center">
-        {/* Small Red Heading */}
-        <p className="text-[11px] text-red-500 tracking-wide mb-3">
+    <section
+      id="about"
+      className="w-full scroll-mt-20 border-t border-gray-200 bg-white px-6 py-20 md:py-24"
+    >
+      <div className="mx-auto max-w-[700px] text-center">
+        <p className="mb-3 text-[11px] font-medium tracking-[3px] text-red-500">
           EXCLUSIVE MEMBERSHIP
         </p>
 
-        {/* Main Heading */}
-        <h2 className="font-serif text-3xl md:text-4xl font-semibold leading-tight text-[#333]">
+        <h2 className="font-serif text-3xl font-semibold leading-tight text-[#333] md:text-4xl">
           Join the Circle of
           <br />
           <span className="text-[#666]">Distinguished Collectors</span>
         </h2>
 
-        {/* Description */}
-        <p className="mt-4 text-sm leading-5 text-gray-400 max-w-[600px] mx-auto">
+        <p className="mx-auto mt-5 max-w-[600px] text-sm leading-7 text-gray-400">
           Gain access to private viewings, first looks at rare acquisitions, and
-          <br className="hidden md:block" />
           exclusive events in the world's finest venues.
         </p>
 
-        {/* Button */}
         <button
-          className="mt-5 bg-[#ffc400] text-black text-[10px]
-          px-5 py-3 flex items-center gap-2 mx-auto
-          hover:bg-[#eab500] transition"
+          type="button"
+          className="mx-auto mt-7 flex items-center gap-2 bg-[#ffc400] px-6 py-3 text-[11px] font-semibold tracking-wider text-black transition duration-300 hover:bg-[#eab500]"
         >
-          <UserRoundPlus size={12} />
+          <UserRoundPlus size={14} />
           REQUEST MEMBERSHIP
         </button>
       </div>
 
       {/* Benefits */}
-      <div className="max-w-[1100px] mx-auto mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
-        {/* Benefit 1 */}
-        <div className="text-center">
-          <ShieldCheck
-            size={22}
-            strokeWidth={1.5}
-            className="mx-auto text-black"
-          />
+      <div className="mx-auto mt-16 grid max-w-[1100px] grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        {benefits.map((benefit, index) => {
+          const Icon = benefit.icon;
 
-          <h3 className="mt-5 text-[11px] font-semibold tracking-widest text-[#333]">
-            AUTHENTICITY GUARANTEED
-          </h3>
+          return (
+            <div key={index} className="text-center">
+              <Icon
+                size={26}
+                strokeWidth={1.5}
+                className="mx-auto text-black"
+              />
 
-          <p className="mt-2 text-[10px] text-gray-400">
-            Every piece verified by our experts
-          </p>
-        </div>
+              <h3 className="mt-5 text-xs font-semibold tracking-widest text-[#333]">
+                {benefit.title}
+              </h3>
 
-        {/* Benefit 2 */}
-        <div className="text-center">
-          <Truck size={22} strokeWidth={1.5} className="mx-auto text-black" />
-
-          <h3 className="mt-5 text-[11px] font-semibold tracking-widest text-[#333]">
-            WHITE GLOVE DELIVERY
-          </h3>
-
-          <p className="mt-2 text-[10px] text-gray-400">
-            Complimentary worldwide shipping
-          </p>
-        </div>
-
-        {/* Benefit 3 */}
-        <div className="text-center">
-          <RotateCcw
-            size={22}
-            strokeWidth={1.5}
-            className="mx-auto text-black"
-          />
-
-          <h3 className="mt-5 text-[11px] font-semibold tracking-widest text-[#333]">
-            30-DAY RETURNS
-          </h3>
-
-          <p className="mt-2 text-[10px] text-gray-400">
-            No questions asked returns
-          </p>
-        </div>
-
-        {/* Benefit 4 */}
-        <div className="text-center">
-          <Award size={22} strokeWidth={1.5} className="mx-auto text-black" />
-
-          <h3 className="mt-5 text-[11px] font-semibold tracking-widest text-[#333]">
-            WARRANTY
-          </h3>
-
-          <p className="mt-2 text-[10px] text-gray-400">
-            Coverage on all timepieces
-          </p>
-        </div>
+              <p className="mt-3 text-xs leading-6 text-gray-400">
+                {benefit.description}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
