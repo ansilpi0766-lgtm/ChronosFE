@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Globe, Search, ShoppingCart, User, X } from "lucide-react";
 
 import CartDrawer from "./CartDrawer";
@@ -8,6 +8,8 @@ import { api } from "../Services/api";
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
   const isHomePage = location.pathname === "/";
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -57,38 +59,19 @@ const Navbar = () => {
     0,
   );
 
-  // Smooth scroll to homepage sections
-  useEffect(() => {
-    if (location.pathname !== "/" || !location.hash) return;
-
-    const sectionId = location.hash.substring(1);
-    let attempts = 0;
-    let animationFrame;
-
-    const scrollToSection = () => {
-      const section = document.getElementById(sectionId);
-
-      if (section) {
-        section.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-        return;
-      }
-
-      attempts++;
-
-      if (attempts < 30) {
-        animationFrame = requestAnimationFrame(scrollToSection);
-      }
-    };
-
-    animationFrame = requestAnimationFrame(scrollToSection);
-
-    return () => {
-      cancelAnimationFrame(animationFrame);
-    };
-  }, [location.pathname, location.hash]);
+  // Navigate to About or Contact section
+  const handleSectionNavigation = (sectionId) => {
+    if (location.pathname === "/") {
+      document.getElementById(sectionId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    } else {
+      navigate("/", {
+        state: { scrollTo: sectionId },
+      });
+    }
+  };
 
   // Fetch products when search is opened
   useEffect(() => {
@@ -159,6 +142,7 @@ const Navbar = () => {
         <div
           className={`flex items-center gap-7 ${isArabic ? "mr-10" : "ml-10"}`}
         >
+          {/* Collections */}
           <Link
             to="/Collection"
             className="cursor-pointer text-sm transition hover:text-[#D9B96E]"
@@ -167,20 +151,22 @@ const Navbar = () => {
           </Link>
 
           {/* About */}
-          <Link
-            to="/#about"
+          <button
+            type="button"
+            onClick={() => handleSectionNavigation("about")}
             className="cursor-pointer text-sm transition hover:text-[#D9B96E]"
           >
             {t.about}
-          </Link>
+          </button>
 
           {/* Contact */}
-          <Link
-            to="/#contact"
+          <button
+            type="button"
+            onClick={() => handleSectionNavigation("contact")}
             className="cursor-pointer text-sm transition hover:text-[#D9B96E]"
           >
             {t.contact}
-          </Link>
+          </button>
 
           {/* FAQ */}
           <Link
@@ -219,6 +205,7 @@ const Navbar = () => {
 
           {/* Search Button */}
           <button
+            type="button"
             onClick={() => {
               setSearchOpen(!searchOpen);
               setSearchText("");
@@ -230,6 +217,7 @@ const Navbar = () => {
 
           {/* Shopping Cart */}
           <button
+            type="button"
             onClick={() => setCartOpen(true)}
             className="relative cursor-pointer"
           >

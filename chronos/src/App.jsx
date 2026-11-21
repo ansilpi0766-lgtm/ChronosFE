@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   createBrowserRouter,
   RouterProvider,
   Outlet,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 
 import { ToastContainer } from "react-toastify";
@@ -11,7 +12,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
-import Membership from "./Components/Membership";
 
 import HomePage from "./Pages/HomePage";
 import Cart from "./Pages/Cart";
@@ -22,9 +22,75 @@ import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import Profile from "./Pages/Profile";
 import FAQ from "./Pages/FAQ";
-// Layout
+
+// Main Layout
 const Layout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const skipNextReset = useRef(false);
+
+  useEffect(() => {
+    // Disable browser automatic scroll restoration
+    window.history.scrollRestoration = "manual";
+
+    // Skip the scroll reset after clearing navigation state
+    if (skipNextReset.current) {
+      skipNextReset.current = false;
+      return;
+    }
+
+    const sectionId =
+      location.pathname === "/" ? location.state?.scrollTo : null;
+
+    // If navigating from another page to About or Contact
+    if (sectionId) {
+      let attempts = 0;
+      let animationFrame;
+
+      const scrollToSection = () => {
+        const section = document.getElementById(sectionId);
+
+        if (section) {
+          section.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+
+          // Clear navigation state so refreshing starts at the top
+          skipNextReset.current = true;
+
+          navigate("/", {
+            replace: true,
+            state: null,
+          });
+
+          return;
+        }
+
+        attempts++;
+
+        if (attempts < 60) {
+          animationFrame = requestAnimationFrame(scrollToSection);
+        } else {
+          window.scrollTo(0, 0);
+        }
+      };
+
+      animationFrame = requestAnimationFrame(scrollToSection);
+
+      return () => {
+        cancelAnimationFrame(animationFrame);
+      };
+    }
+
+    // Normal page navigation or refresh: start at the top
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "instant",
+    });
+  }, [location.key]);
 
   return (
     <>
@@ -32,7 +98,7 @@ const Layout = () => {
 
       <Outlet />
 
-      {/* Hide global Footer on Contact page */}
+      {/* Global Footer */}
       {location.pathname !== "/contact" && <Footer />}
 
       <ToastContainer
@@ -89,7 +155,7 @@ const router = createBrowserRouter([
       },
       {
         path: "about",
-        element: <Membership />,
+        element: <HomePage />,
       },
       {
         path: "contact",

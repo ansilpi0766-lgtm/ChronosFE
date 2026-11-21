@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { ShieldCheck, Truck, Award, RefreshCcw } from "lucide-react";
 
-const CollectionSidebar = () => {
-  const [price, setPrice] = useState(35000);
-
+const CollectionSidebar = ({
+  activeCollection = "",
+  onCollectionChange,
+  maxPrice = 35000,
+  onMaxPriceChange,
+}) => {
   const collections = ["Best Sellers", "New Arrivals", "Featured"];
 
   const services = [
@@ -32,14 +35,22 @@ const CollectionSidebar = () => {
   return (
     <aside className="w-full border-r border-gray-100">
       {/* Collections */}
-      <div className="px-12 py-7 border-b border-gray-100">
-        <h3 className="text-sm font-semibold mb-5">COLLECTIONS</h3>
+      <div className="border-b border-gray-100 px-12 py-7">
+        <h3 className="mb-5 text-sm font-semibold">COLLECTIONS</h3>
 
         <div className="flex flex-wrap gap-2">
           {collections.map((item) => (
             <button
               key={item}
-              className="bg-gray-100 hover:bg-[#f2c035] px-3 py-2 text-sm font-medium transition"
+              type="button"
+              onClick={() =>
+                onCollectionChange?.(activeCollection === item ? "" : item)
+              }
+              className={`px-3 py-2 text-sm font-medium transition ${
+                activeCollection === item
+                  ? "bg-[#f2c035] text-black"
+                  : "bg-gray-100 hover:bg-[#f2c035]"
+              }`}
             >
               {item}
             </button>
@@ -48,39 +59,48 @@ const CollectionSidebar = () => {
       </div>
 
       {/* Price Range */}
-      <div className="px-12 py-7 border-b border-gray-100">
-        <h3 className="text-sm font-semibold mb-5">PRICE RANGE</h3>
+      <div className="border-b border-gray-100 px-12 py-7">
+        <h3 className="mb-5 text-sm font-semibold">PRICE RANGE</h3>
 
         <input
           type="range"
           min="0"
           max="35000"
-          value={price}
-          onChange={(e) => setPrice(Number(e.target.value))}
-          className="w-full h-1 accent-black cursor-pointer"
+          step="100"
+          value={maxPrice}
+          onChange={(e) => onMaxPriceChange?.(Number(e.target.value))}
+          className="h-1 w-full cursor-pointer accent-black"
         />
 
-        <div className="flex justify-between text-xs mt-3">
+        <div className="mt-3 flex justify-between text-xs">
           <span>$0</span>
           <span>$35,000</span>
         </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <span className="border border-gray-200 rounded-full px-3 py-2 text-xs">
+        <div className="mt-4 flex items-center justify-between">
+          <span className="rounded-full border border-gray-200 px-3 py-2 text-xs">
             $0.00
           </span>
 
           <span className="text-xs text-gray-400">To</span>
 
-          <span className="border border-gray-200 rounded-full px-3 py-2 text-xs">
-            ${price.toLocaleString("en-US")}
+          <span className="rounded-full border border-gray-200 px-3 py-2 text-xs">
+            ${maxPrice.toLocaleString("en-US")}
           </span>
         </div>
+
+        <button
+          type="button"
+          onClick={() => onMaxPriceChange?.(35000)}
+          className="mt-3 text-xs text-gray-500 underline hover:text-black"
+        >
+          Reset price
+        </button>
       </div>
 
       {/* Shipping and Delivery */}
       <div className="px-12 py-7">
-        <h3 className="text-sm font-semibold mb-6">SHIPPING & DELIVERY</h3>
+        <h3 className="mb-6 text-sm font-semibold">SHIPPING & DELIVERY</h3>
 
         <div className="space-y-7">
           {services.map((service, index) => {
@@ -99,7 +119,7 @@ const CollectionSidebar = () => {
                     {service.title}
                   </p>
 
-                  <p className="text-xs text-gray-500 mt-1 leading-5">
+                  <p className="mt-1 text-xs leading-5 text-gray-500">
                     {service.description}
                   </p>
                 </div>
