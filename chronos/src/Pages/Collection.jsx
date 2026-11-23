@@ -4,6 +4,7 @@ import CollectionHeader from "../Components/OurCollections/CollectionHeader";
 import CollectionFilters from "../Components/OurCollections/CollectionFilters";
 import CollectionSidebar from "../Components/OurCollections/CollectionSidebar";
 import ProductGrid from "../Components/OurCollections/ProductGrid";
+
 import { api } from "../Services/api";
 
 const Collection = () => {
@@ -18,7 +19,7 @@ const Collection = () => {
   const [sort, setSort] = useState("");
   const [maxPrice, setMaxPrice] = useState(35000);
 
-  // Fetch products from CHRONOS backend
+  // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -26,6 +27,7 @@ const Collection = () => {
         setError("");
 
         const response = await api.get("/products");
+
         const data = response.data;
 
         const productList = Array.isArray(data)
@@ -39,8 +41,11 @@ const Collection = () => {
                 : [];
 
         setProducts(productList);
+
+        console.log("CHRONOS Collection Products:", productList);
       } catch (err) {
         console.error("Collection products error:", err);
+
         setError(
           err.response?.data?.message ||
             "Unable to load products. Please check your backend connection.",
@@ -53,24 +58,48 @@ const Collection = () => {
     fetchProducts();
   }, []);
 
+  // Normalize category names
+  const normalizeCategory = (value) => {
+    return String(typeof value === "object" ? value?.name || "" : value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]/g, "");
+  };
+
+  // Category matching
+  const categoryMatches = (productCategory, selectedCategory) => {
+    const productValue = normalizeCategory(productCategory);
+    const selectedValue = normalizeCategory(selectedCategory);
+
+    if (!productValue || !selectedValue) return false;
+
+    const categoryGroups = {
+      watches: ["watch", "watches", "timepiece", "timepieces"],
+      bags: ["bag", "bags", "handbag", "handbags"],
+      travelbags: ["travelbag", "travelbags", "luggage"],
+      fineart: ["fineart", "art", "artwork"],
+      wintercollection: ["winter", "wintercollection"],
+      burgundyroom: ["burgundy", "burgundyroom"],
+    };
+
+    const group = categoryGroups[selectedValue];
+
+    if (group) {
+      return group.includes(productValue);
+    }
+
+    return productValue === selectedValue;
+  };
+
   // Filter and sort products
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
     // Category filter
     if (category !== "All Collections") {
-      result = result.filter((product) => {
-        const productCategory =
-          typeof product.category === "object"
-            ? product.category?.name
-            : product.category;
-
-        return (
-          String(productCategory || "")
-            .toLowerCase()
-            .trim() === category.toLowerCase().trim()
-        );
-      });
+      result = result.filter((product) =>
+        categoryMatches(product.category, category),
+      );
     }
 
     // Gender filter
@@ -79,16 +108,24 @@ const Collection = () => {
         const productGender =
           product.gender || product.targetAudience || product.audience || "";
 
-        return String(productGender).toLowerCase() === gender.toLowerCase();
+        const value = String(productGender).toLowerCase().trim();
+
+        if (gender === "Her") {
+          return ["her", "women", "woman", "female"].includes(value);
+        }
+
+        if (gender === "His") {
+          return ["his", "men", "man", "male"].includes(value);
+        }
+
+        return true;
       });
     }
 
-    // Sidebar collection filter
+    // Sidebar collections
     if (collection === "New Arrivals") {
       result.sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() -
-          new Date(a.createdAt || 0).getTime(),
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
       );
     }
 
@@ -111,10 +148,10 @@ const Collection = () => {
       );
     }
 
-    // Maximum price
+    // Price filter
     result = result.filter((product) => Number(product.price) <= maxPrice);
 
-    // Search by product name, brand or category
+    // Search
     if (search.trim()) {
       const searchValue = search.toLowerCase().trim();
 
@@ -125,9 +162,16 @@ const Collection = () => {
             : product.category;
 
         return (
-          product.name?.toLowerCase().includes(searchValue) ||
-          product.brand?.toLowerCase().includes(searchValue) ||
+          String(product.name || "")
+            .toLowerCase()
+            .includes(searchValue) ||
+          String(product.brand || "")
+            .toLowerCase()
+            .includes(searchValue) ||
           String(productCategory || "")
+            .toLowerCase()
+            .includes(searchValue) ||
+          String(product.description || "")
             .toLowerCase()
             .includes(searchValue)
         );
@@ -140,9 +184,13 @@ const Collection = () => {
     } else if (sort === "price-high") {
       result.sort((a, b) => Number(b.price) - Number(a.price));
     } else if (sort === "name-asc") {
-      result.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      result.sort((a, b) =>
+        String(a.name || "").localeCompare(String(b.name || "")),
+      );
     } else if (sort === "name-desc") {
-      result.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+      result.sort((a, b) =>
+        String(b.name || "").localeCompare(String(a.name || "")),
+      );
     }
 
     return result;
@@ -153,6 +201,7 @@ const Collection = () => {
       <CollectionHeader />
 
       <div className="grid grid-cols-1 lg:grid-cols-[25%_minmax(0,1fr)]">
+        {/* Sidebar */}
         <aside className="w-full min-w-0 border-r border-gray-200">
           <CollectionSidebar
             activeCollection={collection}
@@ -162,6 +211,7 @@ const Collection = () => {
           />
         </aside>
 
+        {/* Main Collection */}
         <main className="w-full min-w-0">
           <CollectionFilters
             onCategoryChange={setCategory}
