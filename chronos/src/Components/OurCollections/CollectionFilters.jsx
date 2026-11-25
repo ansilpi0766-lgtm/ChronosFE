@@ -1,15 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 
 const CollectionFilters = ({
+  activeCategory = "All Collections",
+  activeGender = "All",
   onCategoryChange,
   onGenderChange,
   onSearch,
   onSortChange,
 }) => {
-  const [activeCategory, setActiveCategory] = useState("All Collections");
+  const [selectedCategory, setSelectedCategory] = useState(activeCategory);
 
-  const [activeGender, setActiveGender] = useState("All");
+  const [selectedGender, setSelectedGender] = useState(activeGender);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("");
 
@@ -25,6 +28,33 @@ const CollectionFilters = ({
 
   const genders = ["All", "Her", "His"];
 
+  useEffect(() => {
+    setSelectedCategory(activeCategory);
+  }, [activeCategory]);
+
+  useEffect(() => {
+    setSelectedGender(activeGender);
+  }, [activeGender]);
+
+  const handleCategory = (category) => {
+    setSelectedCategory(category);
+    onCategoryChange?.(category);
+
+    // Reset gender when All Collections is selected
+    if (category === "All Collections") {
+      setSelectedGender("All");
+      onGenderChange?.("All");
+
+      setSearchTerm("");
+      onSearch?.("");
+    }
+  };
+
+  const handleGender = (gender) => {
+    setSelectedGender(gender);
+    onGenderChange?.(gender);
+  };
+
   const handleSearch = () => {
     onSearch?.(searchTerm);
   };
@@ -37,12 +67,9 @@ const CollectionFilters = ({
           <button
             key={category}
             type="button"
-            onClick={() => {
-              setActiveCategory(category);
-              onCategoryChange?.(category);
-            }}
+            onClick={() => handleCategory(category)}
             className={`shrink-0 whitespace-nowrap border px-5 py-3 text-base transition ${
-              activeCategory === category
+              selectedCategory === category
                 ? "border-[#f2c035] bg-[#f2c035] text-black"
                 : "border-gray-200 bg-white text-gray-600 hover:border-[#f2c035] hover:text-black"
             }`}
@@ -58,12 +85,9 @@ const CollectionFilters = ({
           <button
             key={item}
             type="button"
-            onClick={() => {
-              setActiveGender(item);
-              onGenderChange?.(item);
-            }}
+            onClick={() => handleGender(item)}
             className={`border px-5 py-2.5 text-base transition ${
-              activeGender === item
+              selectedGender === item
                 ? "border-[#f2c035] bg-[#f2c035] text-black"
                 : "border-gray-200 bg-white text-gray-600 hover:border-[#f2c035]"
             }`}
@@ -82,8 +106,10 @@ const CollectionFilters = ({
             type="text"
             value={searchTerm}
             onChange={(e) => {
-              setSearchTerm(e.target.value);
-              if (!e.target.value.trim()) {
+              const value = e.target.value;
+              setSearchTerm(value);
+
+              if (!value.trim()) {
                 onSearch?.("");
               }
             }}
