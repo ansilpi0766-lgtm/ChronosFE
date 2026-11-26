@@ -1,14 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const CartContext = createContext();
 
 const getAvailableStock = (product) => {
-  // Selected variant stock
   if (product.selectedVariant?.stock !== undefined) {
     return Number(product.selectedVariant.stock);
   }
 
-  // Product with multiple variants
   if (Array.isArray(product.variants) && product.variants.length > 0) {
     return product.variants.reduce(
       (total, variant) => total + Math.max(0, Number(variant.stock) || 0),
@@ -16,7 +15,6 @@ const getAvailableStock = (product) => {
     );
   }
 
-  // Normal product stock
   return Number(product.stock);
 };
 
@@ -35,7 +33,6 @@ const getCartItemId = (product) => {
 };
 
 export const CartProvider = ({ children }) => {
-  // Load cart from localStorage
   const [cart, setCart] = useState(() => {
     try {
       const savedCart = localStorage.getItem("chronosCart");
@@ -45,7 +42,7 @@ export const CartProvider = ({ children }) => {
     }
   });
 
-  // Save cart whenever it changes
+  // Save cart to localStorage
   useEffect(() => {
     localStorage.setItem("chronosCart", JSON.stringify(cart));
   }, [cart]);
@@ -54,49 +51,40 @@ export const CartProvider = ({ children }) => {
   const addToCart = (product, quantity = 1) => {
     if (!product?._id) return false;
 
+    const cartItemId = getCartItemId(product);
+
     const requestedQuantity = Math.max(1, Number(quantity) || 1);
+
     const availableStock = getAvailableStock(product);
 
     if (Number.isFinite(availableStock) && availableStock <= 0) {
+      toast.error("This product is out of stock.");
       return false;
     }
 
-    const cartItemId = getCartItemId(product);
+    // Check whether product already exists
+    const existingProduct = cart.find((item) => item.cartItemId === cartItemId);
 
-    setCart((prevCart) => {
-      const existingProduct = prevCart.find(
-        (item) => item.cartItemId === cartItemId,
-      );
+    if (existingProduct) {
+      toast.info("Product is already in your cart.");
+      return false;
+    }
 
-      if (existingProduct) {
-        return prevCart.map((item) => {
-          if (item.cartItemId !== cartItemId) return item;
+    const finalQuantity = Number.isFinite(availableStock)
+      ? Math.min(requestedQuantity, availableStock)
+      : requestedQuantity;
 
-          const newQuantity = item.quantity + requestedQuantity;
+    setCart((prevCart) => [
+      ...prevCart,
+      {
+        ...product,
+        cartItemId,
+        cartStock: Number.isFinite(availableStock) ? availableStock : null,
+        quantity: finalQuantity,
+      },
+    ]);
 
-          return {
-            ...item,
-            quantity: Number.isFinite(availableStock)
-              ? Math.min(newQuantity, availableStock)
-              : newQuantity,
-          };
-        });
-      }
-
-      const finalQuantity = Number.isFinite(availableStock)
-        ? Math.min(requestedQuantity, availableStock)
-        : requestedQuantity;
-
-      return [
-        ...prevCart,
-        {
-          ...product,
-          cartItemId,
-          cartStock: Number.isFinite(availableStock) ? availableStock : null,
-          quantity: finalQuantity,
-        },
-      ];
-    });
+    toast.success("Product added to cart!");
 
     return true;
   };
@@ -108,7 +96,7 @@ export const CartProvider = ({ children }) => {
     );
   };
 
-  // UPDATE QUANTITY
+  // UPDATE QUANTITY MANUALLY
   const updateQuantity = (cartItemId, newQuantity) => {
     const quantity = Number(newQuantity);
 
